@@ -86,7 +86,7 @@ def get_results(df_video, threshold_min=0, threshold_max=5000):
     results = results.loc[:,['video_id', 'title', 'view_count', 'channel_title', 'subscriber_count']]
     return results
 
-st.set_page_config(page_title='YouTube分析アプリ', initial_sidebar_state = 'auto')
+st.set_page_config(page_title='YouTube分析アプリ', layout="wide", initial_sidebar_state = 'auto')
 st.title('YouTube分析アプリ')
 
 st.sidebar.write('## クエリと閾値の設定')
