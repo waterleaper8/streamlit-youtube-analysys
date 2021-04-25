@@ -77,7 +77,7 @@ def get_results(df_video, threshold_min=0, threshold_max=5000):
         video_info['video_id'] = item['id']
         video_info['title'] = item['snippet']['title']
         video_info['channel_title'] = item['snippet']['channelTitle']
-        video_info['view_count'] = item['statistics']['viewCount']
+        video_info['view_count'] = int(item['statistics']['viewCount'])
         videos_info.append(video_info)
 
     df_videos_info = pd.DataFrame(videos_info)
