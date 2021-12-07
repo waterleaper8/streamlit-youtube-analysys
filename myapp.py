@@ -54,7 +54,6 @@ def get_results(df_video, threshold_min=0, threshold_max=5000):
             subscriber = {}
             if len(item['statistics']) > 0:
                 subscriber['channel_id'] = item['id']
-                print(int(item['statistics']['subscriberCount']))
                 subscriber['登録者数'] = int(item['statistics']['subscriberCount'])
             else:
                 subscriber['channel_id'] = item['id']
