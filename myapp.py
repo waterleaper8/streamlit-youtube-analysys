@@ -30,8 +30,8 @@ def video_search(youtube, q='自動化', max_results=50):
     items_id = []
     items = response['items']
     for item in items:
-        item_id = {}
-        item_id['video_id'] = item['id']['videoId']
+        item_id = {'動画ID': '', 'channel_id': ''}
+        item_id['動画ID'] = item['id']['videoId']
         item_id['channel_id'] = item['snippet']['channelId']
         items_id.append(item_id)
 
@@ -40,61 +40,65 @@ def video_search(youtube, q='自動化', max_results=50):
     return df_video
 
 def get_results(df_video, threshold_min=0, threshold_max=5000):
-    channel_ids = df_video['channel_id'].unique().tolist()
+    try:
+        channel_ids = df_video['channel_id'].unique().tolist()
 
-    subscribers_list = youtube.channels().list(
-        id=','.join(channel_ids),
-        part="statistics",
-        fields='items(id,statistics(subscriberCount))'
-    ).execute()
+        subscribers_list = youtube.channels().list(
+            id=','.join(channel_ids),
+            part="statistics",
+            fields='items(id,statistics(subscriberCount))'
+        ).execute()
 
-    subscribers = []
-    for item in subscribers_list['items']:
-        subscriber = {}
-        if len(item['statistics']) > 0:
-            subscriber['channel_id'] = item['id']
-            subscriber['subscriber_count'] = int(item['statistics']['subscriberCount'])
-        else:
-            subscriber['channel_id'] = item['id']
-        subscribers.append(subscriber)
+        subscribers = []
+        for item in subscribers_list['items']:
+            subscriber = {}
+            if len(item['statistics']) > 0:
+                subscriber['channel_id'] = item['id']
+                print(int(item['statistics']['subscriberCount']))
+                subscriber['登録者数'] = int(item['statistics']['subscriberCount'])
+            else:
+                subscriber['channel_id'] = item['id']
+            subscribers.append(subscriber)
 
-    df_subscribers = pd.DataFrame(subscribers)
+        df_subscribers = pd.DataFrame(subscribers)
 
-    df = pd.merge(left=df_video, right=df_subscribers, on='channel_id')
-    df_extracted = df[(threshold_min <= df['subscriber_count']) & (df['subscriber_count'] < threshold_max)]
+        df = pd.merge(left=df_video, right=df_subscribers, on='channel_id')
+        df_extracted = df[(threshold_min <= df['登録者数']) & (df['登録者数'] < threshold_max)]
 
-    video_ids = df_extracted['video_id'].tolist()
-    videos_list = youtube.videos().list(
-        id=','.join(video_ids),
-        part="snippet, statistics",
-        fields='items(id,snippet(title),snippet(channelTitle),statistics(viewCount))'
-    ).execute()
+        video_ids = df_extracted['動画ID'].tolist()
+        videos_list = youtube.videos().list(
+            id=','.join(video_ids),
+            part="snippet, statistics",
+            fields='items(id,snippet(title),snippet(channelTitle),statistics(viewCount))'
+        ).execute()
 
-    videos_info = []
-    items = videos_list['items']
-    for item in items:
-        video_info = {}
-        video_info['video_id'] = item['id']
-        video_info['title'] = item['snippet']['title']
-        video_info['channel_title'] = item['snippet']['channelTitle']
-        video_info['view_count'] = int(item['statistics']['viewCount'])
-        videos_info.append(video_info)
+        videos_info = []
+        items = videos_list['items']
+        for item in items:
+            video_info = {}
+            video_info['動画ID'] = item['id']
+            video_info['タイトル'] = item['snippet']['title']
+            video_info['チャンネル'] = item['snippet']['channelTitle']
+            video_info['再生回数'] = int(item['statistics']['viewCount'])
+            videos_info.append(video_info)
 
-    df_videos_info = pd.DataFrame(videos_info)
+        df_videos_info = pd.DataFrame(videos_info)
 
-    results = pd.merge(left=df_extracted, right=df_videos_info, on='video_id')
-    results = results.loc[:,['video_id', 'title', 'view_count', 'channel_title', 'subscriber_count']]
-    return results
+        results = pd.merge(left=df_extracted, right=df_videos_info, on='動画ID')
+        results = results.loc[:,['動画ID', 'タイトル', '再生回数', 'チャンネル', '登録者数']]
+        results['登録者数'] = results['登録者数'].astype(int)
+        return results
+    except:
+        st.warning('動画が見つかりませんでした')
 
 st.set_page_config(page_title='YouTube分析アプリ', layout="wide", initial_sidebar_state = 'auto')
 st.title('YouTube分析アプリ')
 
-st.sidebar.write('## クエリと閾値の設定')
-st.sidebar.write('### クエリの入力')
-query = st.sidebar.text_input('検索クエリを入力してください', 'Python 自動化')
+st.sidebar.write('## 検索キーワードと閾値の設定')
+query = st.sidebar.text_input(label='検索キーワードの入力', placeholder='検索キーワードを入力')
 
 st.sidebar.write('### 閾値の設定')
-threshold_min, threshold_max = st.sidebar.slider('登録者数の閾値', 100, 100000, (0, 5000))
+threshold_min, threshold_max = st.sidebar.slider('登録者数の閾値', 100, 1000000, (0, 200000))
 
 st.write('### 選択中のパラメータ')
 st.markdown(f"""

@@ -1,0 +1,9 @@
+name: myenv
+dependencies:
+  - json5==0.9.5
+  - google-api-core==1.26.3
+  - google-api-python-client==2.2.0
+  - pandas==1.2.3
+  - streamlit==0.80.0
+# - pip:
+#   - peewee==2.8.1
